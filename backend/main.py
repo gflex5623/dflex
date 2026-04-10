@@ -1,4 +1,9 @@
 import os
+import sys
+
+# Ensure backend directory is in path when run from project root
+sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -29,5 +34,4 @@ if os.path.exists(STATIC_DIR):
 
     @app.get("/{full_path:path}")
     async def serve_frontend(full_path: str):
-        index = os.path.join(STATIC_DIR, "index.html")
-        return FileResponse(index)
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
