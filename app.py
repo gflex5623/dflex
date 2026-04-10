@@ -1,10 +1,7 @@
-from flask import Flask
+import sys
+import os
 
-app = Flask(__name__)
+# Add backend directory to path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "backend"))
 
-@app.route('/')
-def hello():
-    return 'Hello World!'
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000)
+from main import app
