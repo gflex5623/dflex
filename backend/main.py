@@ -1,9 +1,4 @@
 import os
-import sys
-
-# Ensure backend directory is in path when run from project root
-sys.path.insert(0, os.path.join(os.path.dirname(__file__)))
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
