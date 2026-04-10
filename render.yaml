@@ -2,7 +2,7 @@ services:
   - type: web
     name: dflex
     runtime: python
-    buildCommand: pip install -r requirements.txt && npm --prefix client install && npm --prefix client run build
+    buildCommand: pip install -r requirements.txt
     startCommand: python app.py
     envVars:
       - key: PYTHON_VERSION
