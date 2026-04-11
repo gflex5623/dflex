@@ -1,6 +1,7 @@
 import os
 import sys
 import bcrypt
+    import bcrypt
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
