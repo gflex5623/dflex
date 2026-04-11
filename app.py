@@ -1,28 +1,16 @@
+from flask import Flask, jsonify
 import os
-import sys
 
-port = int(os.environ.get("PORT", 8000))
-print(f"Starting on port {port}", flush=True)
+app = Flask(__name__)
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-import uvicorn
+@app.route('/')
+def home():
+    return jsonify({"status": "dFlex is running"})
 
-print("FastAPI imported", flush=True)
-
-app = FastAPI()
-
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
-
-@app.get("/")
-def root():
-    return {"status": "dFlex API running"}
-
-@app.get("/health")
+@app.route('/health')
 def health():
-    return {"ok": True}
+    return jsonify({"ok": True})
 
-print("App created, starting uvicorn...", flush=True)
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=port, loop="asyncio")
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
