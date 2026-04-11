@@ -185,11 +185,30 @@ def _advert_out(a):
 
 # ── Static frontend ───────────────────────────────────────
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend", "static")
-if os.path.exists(os.path.join(STATIC_DIR, "index.html")):
+INDEX_HTML = os.path.join(STATIC_DIR, "index.html")
+
+FALLBACK_HTML = """<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>dFlex</title>
+    <meta name="google-site-verification" content="LgBd1l6fCFzOl9QRvTpOSy9FrCt3T3eLqqQBc7UlpP0" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <p style="font-family:sans-serif;text-align:center;margin-top:50px">
+      dFlex is loading... <a href="/docs">API Docs</a>
+    </p>
+  </body>
+</html>"""
+
+if os.path.exists(INDEX_HTML):
     app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
     @app.get("/{full_path:path}")
     async def frontend(full_path: str):
-        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+        return FileResponse(INDEX_HTML)
 else:
     @app.get("/")
-    def root(): return {"status": "dFlex API running", "docs": "/docs"}
+    async def root():
+        return HTMLResponse(FALLBACK_HTML)
