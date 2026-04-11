@@ -106,6 +106,23 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, 
 
 SEED_CATS = ["Real Estate","Vehicles","Electronics","Jobs","Services","Fashion","Food & Drinks","Other"]
 
+@app.get("/sitemap.xml")
+async def sitemap():
+    from fastapi.responses import Response
+    xml = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://dflex-fdya.onrender.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://dflex-fdya.onrender.com/register</loc><priority>0.9</priority></url>
+  <url><loc>https://dflex-fdya.onrender.com/login</loc><priority>0.8</priority></url>
+  <url><loc>https://dflex-fdya.onrender.com/post</loc><priority>0.8</priority></url>
+</urlset>"""
+    return Response(content=xml, media_type="application/xml")
+
+@app.get("/robots.txt")
+async def robots():
+    from fastapi.responses import PlainTextResponse
+    return PlainTextResponse("User-agent: *\nAllow: /\nSitemap: https://dflex-fdya.onrender.com/sitemap.xml")
+
 # ── Routes ────────────────────────────────────────────────
 @app.post("/api/auth/register")
 def register(data: UserCreate, db: Session = Depends(get_db)):
