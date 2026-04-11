@@ -7,18 +7,19 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import create_engine, Column, Integer, String, Text, Float, DateTime, ForeignKey, Boolean
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session, relationship
-from pydantic import BaseModel, EmailStr
+from sqlalchemy.orm import sessionmaker, Session, relationship, DeclarativeBase
+from pydantic import BaseModel
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional, List
+
+class Base(DeclarativeBase):
+    pass
 
 # ── Database ──────────────────────────────────────────────
 DATABASE_URL = "sqlite:///./dflex.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
 
 def get_db():
     db = SessionLocal()
