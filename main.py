@@ -9,12 +9,11 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy import create_engine, Column, Integer, String, Text, Float, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-# ── Database ──────────────────────────────────────────────
 DATABASE_URL = "sqlite:///./dflex.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -27,7 +26,6 @@ def get_db():
     finally:
         db.close()
 
-# ── Models ────────────────────────────────────────────────
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -61,7 +59,6 @@ class Advert(Base):
 
 Base.metadata.create_all(bind=engine)
 
-# ── Auth ──────────────────────────────────────────────────
 SECRET_KEY = "dflex-secret-key-2024"
 ALGORITHM = "HS256"
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -80,7 +77,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
 
-# ── Schemas ───────────────────────────────────────────────
 class UserCreate(BaseModel):
     name: str; email: str; password: str
 
@@ -99,13 +95,11 @@ class AdvertUpdate(BaseModel):
     contact: Optional[str] = None; image_url: Optional[str] = None
     category_id: Optional[int] = None; is_active: Optional[bool] = None
 
-# ── App ───────────────────────────────────────────────────
 app = FastAPI(title="dFlex API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 SEED_CATS = ["Real Estate","Vehicles","Electronics","Jobs","Services","Fashion","Food & Drinks","Other"]
 
-# ── Routes ────────────────────────────────────────────────
 @app.post("/api/auth/register")
 def register(data: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == data.email).first():
@@ -183,32 +177,15 @@ def _advert_out(a):
             "category": {"id": a.category.id, "name": a.category.name} if a.category else None,
             "owner": {"id": a.owner.id, "name": a.owner.name, "email": a.owner.email, "created_at": str(a.owner.created_at)}}
 
-# ── Static frontend ───────────────────────────────────────
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend", "static")
-INDEX_HTML = os.path.join(STATIC_DIR, "index.html")
-
-FALLBACK_HTML = """<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>dFlex</title>
-    <meta name="google-site-verification" content="LgBd1l6fCFzOl9QRvTpOSy9FrCt3T3eLqqQBc7UlpP0" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <p style="font-family:sans-serif;text-align:center;margin-top:50px">
-      dFlex is loading... <a href="/docs">API Docs</a>
-    </p>
-  </body>
-</html>"""
-
-if os.path.exists(INDEX_HTML):
+if os.path.exists(os.path.join(STATIC_DIR, "index.html")):
     app.mount("/assets", StaticFiles(directory=os.path.join(STATIC_DIR, "assets")), name="assets")
     @app.get("/{full_path:path}")
     async def frontend(full_path: str):
-        return FileResponse(INDEX_HTML)
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 else:
     @app.get("/")
     async def root():
-        return HTMLResponse(FALLBACK_HTML)
+        return HTMLResponse("""<!DOCTYPE html><html><head>
+<meta name="google-site-verification" content="LgBd1l6fCFzOl9QRvTpOSy9FrCt3T3eLqqQBc7UlpP0" />
+<title>dFlex</title></head><body><h1>dFlex API</h1></body></html>""")
