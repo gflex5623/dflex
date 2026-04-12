@@ -13,50 +13,35 @@ def api(method, path, data=None):
             body = r.read()
             return json.loads(body) if body else {}
     except urllib.error.HTTPError as e:
-        print(f"{method} error {e.code}: {e.read().decode()[:300]}")
+        print(f"Error {e.code}: {e.read().decode()[:200]}")
         return {}
 
-# Reset start command to simple form
-api("PATCH", f"/services/{SERVICE_ID}", {
-    "serviceDetails": {
-        "envSpecificDetails": {
-            "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT",
-            "buildCommand": "pip install -r requirements.txt"
-        }
-    }
-})
-
 # Trigger deploy
-print("Deploying...")
+print("Deploying sitemap update...")
 deploy_req = urllib.request.Request(
     f"https://api.render.com/v1/services/{SERVICE_ID}/deploys",
-    data=json.dumps({"clearCache": "clear"}).encode(), headers=HEADERS, method="POST")
+    data=json.dumps({}).encode(), headers=HEADERS, method="POST")
 try:
     with urllib.request.urlopen(deploy_req) as r:
         body = r.read()
         d = json.loads(body) if body else {}
         if isinstance(d, list): d = d[0] if d else {}
         deploy_id = d.get("deploy", d).get("id", "")
-except Exception as e:
-    deploy_id = ""
-
-if not deploy_id:
+except:
     deploys = api("GET", f"/services/{SERVICE_ID}/deploys?limit=1")
     items = deploys if isinstance(deploys, list) else []
-    if items:
-        deploy_id = items[0].get("deploy", items[0]).get("id", "")
+    deploy_id = items[0].get("deploy", items[0]).get("id", "") if items else ""
 
-print(f"Deploy ID: {deploy_id}")
-
-for i in range(40):
+print(f"Deploy: {deploy_id}")
+for i in range(30):
     time.sleep(10)
     r = api("GET", f"/services/{SERVICE_ID}/deploys/{deploy_id}")
     if isinstance(r, list): r = r[0] if r else {}
     status = r.get("deploy", r).get("status", "?")
     print(f"  [{i+1}] {status}")
     if status == "live":
-        print(f"\n✅ LIVE: https://dflex-fdya.onrender.com")
+        print("✅ Live!")
         break
-    elif "failed" in status or status == "canceled":
-        print(f"\n❌ Failed: {status}")
+    elif "failed" in status:
+        print("❌ Failed")
         break

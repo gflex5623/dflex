@@ -16,37 +16,44 @@ def api(method, path, data=None):
         print(f"{method} error {e.code}: {e.read().decode()[:300]}")
         return {}
 
-# Reset start command to simple form
-api("PATCH", f"/services/{SERVICE_ID}", {
+# Try with shell expansion syntax
+print("Updating start command with shell syntax...")
+result = api("PATCH", f"/services/{SERVICE_ID}", {
     "serviceDetails": {
         "envSpecificDetails": {
-            "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT",
-            "buildCommand": "pip install -r requirements.txt"
+            "startCommand": "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"
         }
     }
 })
+details = result.get("serviceDetails", {}).get("envSpecificDetails", {})
+print(f"startCommand: {details.get('startCommand','')}")
 
-# Trigger deploy
+# Deploy
 print("Deploying...")
+time.sleep(3)
+deploys = api("GET", f"/services/{SERVICE_ID}/deploys?limit=1")
+items = deploys if isinstance(deploys, list) else []
+latest = items[0].get("deploy", items[0]) if items else {}
+
+# Trigger via POST
 deploy_req = urllib.request.Request(
     f"https://api.render.com/v1/services/{SERVICE_ID}/deploys",
-    data=json.dumps({"clearCache": "clear"}).encode(), headers=HEADERS, method="POST")
+    data=json.dumps({}).encode(), headers=HEADERS, method="POST")
 try:
     with urllib.request.urlopen(deploy_req) as r:
         body = r.read()
         d = json.loads(body) if body else {}
         if isinstance(d, list): d = d[0] if d else {}
         deploy_id = d.get("deploy", d).get("id", "")
+        print(f"Deploy triggered: {deploy_id}")
 except Exception as e:
-    deploy_id = ""
-
-if not deploy_id:
-    deploys = api("GET", f"/services/{SERVICE_ID}/deploys?limit=1")
-    items = deploys if isinstance(deploys, list) else []
-    if items:
-        deploy_id = items[0].get("deploy", items[0]).get("id", "")
-
-print(f"Deploy ID: {deploy_id}")
+    print(f"Deploy trigger: {e}")
+    # Get latest
+    deploys2 = api("GET", f"/services/{SERVICE_ID}/deploys?limit=1")
+    items2 = deploys2 if isinstance(deploys2, list) else []
+    if items2:
+        deploy_id = items2[0].get("deploy", items2[0]).get("id", "")
+        print(f"Using latest deploy: {deploy_id}")
 
 for i in range(40):
     time.sleep(10)

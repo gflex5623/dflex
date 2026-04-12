@@ -16,42 +16,28 @@ def api(method, path, data=None):
         print(f"{method} error {e.code}: {e.read().decode()[:300]}")
         return {}
 
-# Reset start command to simple form
-api("PATCH", f"/services/{SERVICE_ID}", {
+# Update build command to include npm build
+print("Updating build command...")
+result = api("PATCH", f"/services/{SERVICE_ID}", {
     "serviceDetails": {
         "envSpecificDetails": {
-            "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT",
-            "buildCommand": "pip install -r requirements.txt"
+            "buildCommand": "pip install -r requirements.txt && curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && apt-get install -y nodejs && npm --prefix client install && npm --prefix client run build",
+            "startCommand": "uvicorn main:app --host 0.0.0.0 --port $PORT"
         }
     }
 })
+print("Done")
 
-# Trigger deploy
+# Deploy
 print("Deploying...")
-deploy_req = urllib.request.Request(
-    f"https://api.render.com/v1/services/{SERVICE_ID}/deploys",
-    data=json.dumps({"clearCache": "clear"}).encode(), headers=HEADERS, method="POST")
-try:
-    with urllib.request.urlopen(deploy_req) as r:
-        body = r.read()
-        d = json.loads(body) if body else {}
-        if isinstance(d, list): d = d[0] if d else {}
-        deploy_id = d.get("deploy", d).get("id", "")
-except Exception as e:
-    deploy_id = ""
-
-if not deploy_id:
-    deploys = api("GET", f"/services/{SERVICE_ID}/deploys?limit=1")
-    items = deploys if isinstance(deploys, list) else []
-    if items:
-        deploy_id = items[0].get("deploy", items[0]).get("id", "")
-
-print(f"Deploy ID: {deploy_id}")
+deploy = api("POST", f"/services/{SERVICE_ID}/deploys", {})
+d = deploy.get("deploy", deploy)
+deploy_id = d.get("id", "")
+print(f"Deploy: {deploy_id} | {d.get('status','?')}")
 
 for i in range(40):
     time.sleep(10)
     r = api("GET", f"/services/{SERVICE_ID}/deploys/{deploy_id}")
-    if isinstance(r, list): r = r[0] if r else {}
     status = r.get("deploy", r).get("status", "?")
     print(f"  [{i+1}] {status}")
     if status == "live":

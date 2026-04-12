@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
+import ImageUpload from '../components/ImageUpload'
 
 export default function PostAdvert() {
   const { id } = useParams()
@@ -90,8 +91,11 @@ export default function PostAdvert() {
             </div>
           </div>
           <div className="form-group">
-            <label>Image URL</label>
-            <input name="image_url" value={form.image_url} onChange={handleChange} placeholder="https://..." />
+            <label>Photo</label>
+            <ImageUpload
+              currentImage={form.image_url}
+              onUpload={(url) => setForm({ ...form, image_url: url })}
+            />
           </div>
           {error && <p className="error-msg">{error}</p>}
           <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.75rem' }}>
