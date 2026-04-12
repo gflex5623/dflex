@@ -69,14 +69,16 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 def hash_password(p): return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
 def verify_password(p, h): return bcrypt.checkpw(p.encode(), h.encode())
-def create_token(uid): return jwt.encode({"sub": uid, "exp": datetime.utcnow() + timedelta(hours=24)}, SECRET_KEY, ALGORITHM)
+def create_token(uid): return jwt.encode({"sub": str(uid), "exp": datetime.utcnow() + timedelta(hours=24)}, SECRET_KEY, ALGORITHM)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         uid = payload.get("sub")
-        user = db.query(User).filter(User.id == uid).first()
-        if not user: raise HTTPException(status_code=401, detail="Invalid token")
+        if uid is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = db.query(User).filter(User.id == int(uid)).first()
+        if not user: raise HTTPException(status_code=401, detail="User not found")
         return user
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid token")
