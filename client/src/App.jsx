@@ -7,6 +7,8 @@ import Register from './pages/Register'
 import AdvertDetail from './pages/AdvertDetail'
 import PostAdvert from './pages/PostAdvert'
 import MyAdverts from './pages/MyAdverts'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 export default function App() {
   return (
@@ -21,6 +23,8 @@ export default function App() {
           <Route path="/post" element={<PostAdvert />} />
           <Route path="/edit/:id" element={<PostAdvert />} />
           <Route path="/my-adverts" element={<MyAdverts />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

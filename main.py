@@ -1,6 +1,9 @@
 import os
 import sys
 import bcrypt
+import secrets
+import smtplib
+from email.mime.text import MIMEText
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -60,6 +63,13 @@ class Advert(Base):
     category = relationship("Category", back_populates="adverts")
     owner = relationship("User", back_populates="adverts")
 
+class PasswordReset(Base):
+    __tablename__ = "password_resets"
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, nullable=False)
+    token = Column(String, unique=True, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
 Base.metadata.create_all(bind=engine)
 
 # ── Auth ──────────────────────────────────────────────────
@@ -102,6 +112,46 @@ class AdvertUpdate(BaseModel):
     contact: Optional[str] = None; image_url: Optional[str] = None
     category_id: Optional[int] = None; is_active: Optional[bool] = None
 
+class ForgotPassword(BaseModel):
+    email: str
+
+class ResetPassword(BaseModel):
+    token: str
+    new_password: str
+
+# Email config — set these as Render env vars
+SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+APP_URL = os.environ.get("APP_URL", "https://dflex-fdya.onrender.com")
+
+def send_reset_email(to_email: str, token: str):
+    if not SMTP_EMAIL or not SMTP_PASSWORD:
+        return False
+    reset_link = f"{APP_URL}/reset-password?token={token}"
+    body = f"""Hi,
+
+You requested a password reset for your dFlex account.
+
+Click the link below to reset your password (valid for 1 hour):
+{reset_link}
+
+If you didn't request this, ignore this email.
+
+— dFlex Team
+"""
+    msg = MIMEText(body)
+    msg["Subject"] = "dFlex — Reset Your Password"
+    msg["From"] = SMTP_EMAIL
+    msg["To"] = to_email
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+            s.login(SMTP_EMAIL, SMTP_PASSWORD)
+            s.sendmail(SMTP_EMAIL, to_email, msg.as_string())
+        return True
+    except Exception as e:
+        print(f"Email error: {e}")
+        return False
+
 # ── App ───────────────────────────────────────────────────
 app = FastAPI(title="dFlex API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -142,6 +192,39 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(401, "Invalid credentials")
     return {"access_token": create_token(user.id), "token_type": "bearer",
             "user": {"id": user.id, "name": user.name, "email": user.email, "created_at": str(user.created_at)}}
+
+@app.post("/api/auth/forgot-password")
+def forgot_password(data: ForgotPassword, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == data.email).first()
+    # Always return success to prevent email enumeration
+    if user:
+        # Delete old tokens for this email
+        db.query(PasswordReset).filter(PasswordReset.email == data.email).delete()
+        token = secrets.token_urlsafe(32)
+        db.add(PasswordReset(email=data.email, token=token))
+        db.commit()
+        sent = send_reset_email(data.email, token)
+        if not sent:
+            # Return token in response if email not configured (dev mode)
+            return {"message": "Reset link generated", "reset_token": token, "note": "Email not configured — use this token directly"}
+    return {"message": "If that email exists, a reset link has been sent"}
+
+@app.post("/api/auth/reset-password")
+def reset_password(data: ResetPassword, db: Session = Depends(get_db)):
+    reset = db.query(PasswordReset).filter(PasswordReset.token == data.token).first()
+    if not reset:
+        raise HTTPException(400, "Invalid or expired reset token")
+    # Check token is less than 1 hour old
+    if (datetime.utcnow() - reset.created_at).total_seconds() > 3600:
+        db.delete(reset); db.commit()
+        raise HTTPException(400, "Reset token has expired")
+    user = db.query(User).filter(User.email == reset.email).first()
+    if not user:
+        raise HTTPException(400, "User not found")
+    user.password_hash = hash_password(data.new_password)
+    db.delete(reset)
+    db.commit()
+    return {"message": "Password reset successfully"}
 
 @app.get("/api/categories/")
 def get_categories(db: Session = Depends(get_db)):
