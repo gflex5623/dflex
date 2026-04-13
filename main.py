@@ -80,6 +80,16 @@ class PasswordReset(Base):
 
 Base.metadata.create_all(bind=engine)
 
+# Run migration to add currency column if it doesn't exist
+try:
+    with engine.connect() as conn:
+        conn.execute(__import__('sqlalchemy').text(
+            "ALTER TABLE adverts ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'NGN'"
+        ))
+        conn.commit()
+except Exception as e:
+    pass  # Column already exists or not supported
+
 # ── Auth ──────────────────────────────────────────────────
 SECRET_KEY = "dflex-secret-key-2024"
 ALGORITHM = "HS256"
