@@ -64,6 +64,7 @@ class Advert(Base):
     contact = Column(String, nullable=True)
     image_url = Column(String, nullable=True)
     is_active = Column(Boolean, default=True)
+    currency = Column(String, default="USD")
     created_at = Column(DateTime, default=datetime.utcnow)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
     owner_id = Column(Integer, ForeignKey("users.id"), nullable=False)
@@ -111,13 +112,14 @@ class AdvertCreate(BaseModel):
     title: str; description: str
     price: Optional[float] = None; location: Optional[str] = None
     contact: Optional[str] = None; image_url: Optional[str] = None
-    category_id: Optional[int] = None
+    category_id: Optional[int] = None; currency: Optional[str] = "USD"
 
 class AdvertUpdate(BaseModel):
     title: Optional[str] = None; description: Optional[str] = None
     price: Optional[float] = None; location: Optional[str] = None
     contact: Optional[str] = None; image_url: Optional[str] = None
     category_id: Optional[int] = None; is_active: Optional[bool] = None
+    currency: Optional[str] = None
 
 class ForgotPassword(BaseModel):
     email: str
@@ -289,6 +291,7 @@ def _advert_out(a):
     return {"id": a.id, "title": a.title, "description": a.description,
             "price": a.price, "location": a.location, "contact": a.contact,
             "image_url": a.image_url, "is_active": a.is_active,
+            "currency": a.currency or "USD",
             "created_at": str(a.created_at),
             "category": {"id": a.category.id, "name": a.category.name} if a.category else None,
             "owner": {"id": a.owner.id, "name": a.owner.name, "email": a.owner.email, "created_at": str(a.owner.created_at)}}

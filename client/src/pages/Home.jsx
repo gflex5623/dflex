@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api'
+import { formatPrice } from '../utils/currency'
 
 const CATEGORY_ICONS = {
   'Real Estate': '🏠', 'Vehicles': '🚗', 'Electronics': '💻',
@@ -88,7 +89,7 @@ export default function Home() {
                 <div className="card-body">
                   {ad.category && <span className="category-tag">{ad.category.name}</span>}
                   <h3>{ad.title}</h3>
-                  {ad.price != null && <div className="price">${ad.price.toLocaleString()}</div>}
+                  {ad.price != null && <div className="price">{formatPrice(ad.price, ad.currency)}</div>}
                   {ad.location && <div className="location">📍 {ad.location}</div>}
                 </div>
               </div>

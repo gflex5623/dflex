@@ -11,7 +11,13 @@ def post(path, data, token=None):
         r = urllib.request.urlopen(req)
         return json.loads(r.read()), r.status
     except urllib.request.HTTPError as e:
-        return json.loads(e.read()), e.code
+        body = e.read()
+        try:
+            return json.loads(body), e.code
+        except:
+            return {"detail": body.decode()[:200]}, e.code
+    except Exception as e:
+        return {"detail": str(e)}, 500
 
 def register_or_login(name, email, password):
     resp, status = post("/api/auth/register", {"name": name, "email": email, "password": password})

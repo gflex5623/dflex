@@ -13,7 +13,7 @@ export default function PostAdvert() {
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     title: '', description: '', price: '', location: '',
-    contact: '', image_url: '', category_id: ''
+    contact: '', image_url: '', category_id: '', currency: 'USD'
   })
 
   useEffect(() => {
@@ -26,7 +26,7 @@ export default function PostAdvert() {
           title: a.title, description: a.description,
           price: a.price ?? '', location: a.location ?? '',
           contact: a.contact ?? '', image_url: a.image_url ?? '',
-          category_id: a.category?.id ?? ''
+          category_id: a.category?.id ?? '', currency: a.currency ?? 'USD'
         })
       })
     }
@@ -69,9 +69,26 @@ export default function PostAdvert() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label>Price ($)</label>
-              <input name="price" type="number" value={form.price} onChange={handleChange} />
+              <label>Currency</label>
+              <select name="currency" value={form.currency} onChange={handleChange}>
+                <option value="USD">🇺🇸 USD — US Dollar</option>
+                <option value="NGN">🇳🇬 NGN — Nigerian Naira</option>
+                <option value="GBP">🇬🇧 GBP — British Pound</option>
+                <option value="EUR">🇪🇺 EUR — Euro</option>
+                <option value="GHS">🇬🇭 GHS — Ghanaian Cedi</option>
+                <option value="KES">🇰🇪 KES — Kenyan Shilling</option>
+                <option value="ZAR">🇿🇦 ZAR — South African Rand</option>
+                <option value="CAD">🇨🇦 CAD — Canadian Dollar</option>
+                <option value="AUD">🇦🇺 AUD — Australian Dollar</option>
+                <option value="AED">🇦🇪 AED — UAE Dirham</option>
+              </select>
             </div>
+            <div className="form-group">
+              <label>Price</label>
+              <input name="price" type="number" value={form.price} onChange={handleChange} placeholder="0.00" />
+            </div>
+          </div>
+          <div className="form-row">
             <div className="form-group">
               <label>Category</label>
               <select name="category_id" value={form.category_id} onChange={handleChange}>

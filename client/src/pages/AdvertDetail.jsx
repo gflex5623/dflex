@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
+import { formatPrice } from '../utils/currency'
 
 export default function AdvertDetail() {
   const { id } = useParams()
@@ -41,7 +42,7 @@ export default function AdvertDetail() {
             <span>📅 {new Date(advert.created_at).toLocaleDateString()}</span>
           </div>
           {advert.price != null && (
-            <div className="detail-price">${advert.price.toLocaleString()}</div>
+            <div className="detail-price">{formatPrice(advert.price, advert.currency)}</div>
           )}
           <p className="detail-description">{advert.description}</p>
           {advert.contact && (
