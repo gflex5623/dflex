@@ -20,8 +20,15 @@ class Base(DeclarativeBase):
     pass
 
 # ── Database ──────────────────────────────────────────────
-DATABASE_URL = "sqlite:///./dflex.db"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "postgresql://dflex_db_n34u_user:FDfnGatpYo1yYDLaRmRCFmB3VdraZLVG@dpg-d7e6c9vlk1mc73f5hkk0-a.oregon-postgres.render.com:5432/dflex_db_n34u"
+)
+# Fix for SQLAlchemy — replace postgres:// with postgresql://
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+
+engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
