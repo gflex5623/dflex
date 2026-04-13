@@ -3,6 +3,8 @@ import sys
 import bcrypt
 import secrets
 import smtplib
+import threading
+import urllib.request
 from email.mime.text import MIMEText
 from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -79,6 +81,20 @@ class PasswordReset(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
 Base.metadata.create_all(bind=engine)
+
+# Keep-alive: ping self every 10 minutes to prevent Render free tier sleep
+def keep_alive():
+    import time
+    time.sleep(60)  # wait 1 min after startup
+    while True:
+        try:
+            port = os.environ.get("PORT", "10000")
+            urllib.request.urlopen(f"http://localhost:{port}/ping", timeout=10)
+        except:
+            pass
+        time.sleep(600)  # every 10 minutes
+
+threading.Thread(target=keep_alive, daemon=True).start()
 
 # Run migration to add currency column if it doesn't exist
 try:
@@ -176,6 +192,10 @@ app = FastAPI(title="dFlex API")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 SEED_CATS = ["Real Estate","Vehicles","Electronics","Jobs","Services","Fashion","Food & Drinks","Other"]
+
+@app.get("/ping")
+async def ping():
+    return {"status": "ok"}
 
 @app.get("/sitemap.xml")
 async def sitemap():

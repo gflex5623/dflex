@@ -31,7 +31,7 @@ export default function Register() {
             <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
           </div>
           <div className="form-group">
-            <label>Email</label>
+            <label>Email</label>An unexpected error occurred while processing your input.
             <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
           </div>
           <div className="form-group">
