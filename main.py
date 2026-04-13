@@ -97,7 +97,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 def hash_password(p): return bcrypt.hashpw(p.encode(), bcrypt.gensalt()).decode()
 def verify_password(p, h): return bcrypt.checkpw(p.encode(), h.encode())
-def create_token(uid): return jwt.encode({"sub": str(uid), "exp": datetime.utcnow() + timedelta(hours=24)}, SECRET_KEY, ALGORITHM)
+def create_token(uid): return jwt.encode({"sub": str(uid), "exp": datetime.utcnow() + timedelta(days=30)}, SECRET_KEY, ALGORITHM)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
@@ -211,6 +211,10 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(401, "Invalid credentials")
     return {"access_token": create_token(user.id), "token_type": "bearer",
             "user": {"id": user.id, "name": user.name, "email": user.email, "created_at": str(user.created_at)}}
+
+@app.get("/api/auth/me")
+def get_me(u=Depends(get_current_user)):
+    return {"id": u.id, "name": u.name, "email": u.email, "created_at": str(u.created_at)}
 
 @app.post("/api/auth/forgot-password")
 def forgot_password(data: ForgotPassword, db: Session = Depends(get_db)):
