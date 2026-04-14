@@ -97,18 +97,22 @@ def keep_alive():
 
 threading.Thread(target=keep_alive, daemon=True).start()
 
-# Run migration to add currency column if it doesn't exist
+# Run migration to add new columns if they don't exist
 try:
     with engine.connect() as conn:
-        conn.execute(__import__('sqlalchemy').text(
-            "ALTER TABLE adverts ADD COLUMN IF NOT EXISTS currency VARCHAR DEFAULT 'NGN'"
-        ))
-        conn.execute(__import__('sqlalchemy').text(
-            "ALTER TABLE adverts ADD COLUMN IF NOT EXISTS video_url VARCHAR"
-        ))
+        for col, typedef in [
+            ("currency", "VARCHAR DEFAULT 'NGN'"),
+            ("video_url", "VARCHAR"),
+        ]:
+            try:
+                conn.execute(__import__('sqlalchemy').text(
+                    f"ALTER TABLE adverts ADD COLUMN IF NOT EXISTS {col} {typedef}"
+                ))
+            except:
+                pass
         conn.commit()
-except Exception as e:
-    pass  # Column already exists or not supported
+except:
+    pass
 
 # ── Auth ──────────────────────────────────────────────────
 SECRET_KEY = "dflex-secret-key-2024"
