@@ -266,6 +266,26 @@ SEED_CATS = ["Real Estate","Vehicles","Electronics","Jobs","Services","Fashion",
 async def ping():
     return {"status": "ok"}
 
+# Admin: upgrade user plan (internal use)
+@app.post("/api/admin/upgrade")
+def admin_upgrade(data: dict):
+    secret = data.get("secret")
+    if secret != "dflex-admin-2024":
+        raise HTTPException(403, "Forbidden")
+    from sqlalchemy import text as _text
+    emails = data.get("emails", [])
+    plan = data.get("plan", "pro")
+    db = SessionLocal()
+    try:
+        for email in emails:
+            user = db.query(User).filter(User.email == email).first()
+            if user:
+                user.plan = plan
+        db.commit()
+        return {"updated": len(emails), "plan": plan}
+    finally:
+        db.close()
+
 @app.get("/sitemap.xml")
 async def sitemap():
     from fastapi.responses import Response
