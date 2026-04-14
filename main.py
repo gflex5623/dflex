@@ -451,10 +451,11 @@ def init_payment(data: dict, u=Depends(get_current_user)):
     amount_map = {
         "subscription_basic": 200000,
         "subscription_pro": 500000,
-        "verification": VERIFICATION_FEE,
-        "banner": BANNER_FEE,
+        "verification_badge": 100000,
+        "banner_monthly": 1000000,
     }
-    amount = amount_map.get(f"{payment_type}_{plan}" if payment_type == "subscription" else payment_type, 0)
+    key = f"{payment_type}_{plan}" if plan else payment_type
+    amount = amount_map.get(key, 0)
     if not amount:
         raise HTTPException(400, "Invalid payment type")
 
@@ -504,9 +505,12 @@ def verify_payment(data: PaystackVerify, db: Session = Depends(get_db), u=Depend
             u.plan = plan
             db.add(Subscription(user_id=u.id, plan=plan, paystack_ref=ref,
                 expires_at=datetime.utcnow() + timedelta(days=30)))
-        elif payment_type == "verification":
+        elif payment_type in ("verification", "verification"):
             u.is_verified = True
             db.add(VerificationRequest(user_id=u.id, status="verified", paystack_ref=ref))
+        elif payment_type == "banner":
+            db.add(BannerAd(title="Banner Ad", image_url="", advertiser=u.name,
+                paystack_ref=ref, ends_at=datetime.utcnow() + timedelta(days=30)))
         db.commit()
         return {"status": "success", "plan": u.plan, "is_verified": u.is_verified}
     except HTTPException:
