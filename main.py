@@ -404,6 +404,18 @@ def get_advert(advert_id: int, db: Session = Depends(get_db)):
 
 @app.post("/api/adverts/")
 def create_advert(data: AdvertCreate, db: Session = Depends(get_db), u=Depends(get_current_user)):
+    # Enforce posting limits based on plan
+    plan_limits = {"free": 2, "basic": 10, "pro": 999999}
+    limit = plan_limits.get(u.plan or "free", 2)
+    user_advert_count = db.query(Advert).filter(Advert.owner_id == u.id).count()
+
+    if user_advert_count >= limit:
+        plan_name = (u.plan or "free").capitalize()
+        if u.plan == "free" or u.plan is None:
+            raise HTTPException(402, f"You've used your 2 free adverts. Upgrade to Basic (₦2,000/month) or Pro (₦5,000/month) to post more. Visit /pricing to upgrade.")
+        else:
+            raise HTTPException(402, f"You've reached your {plan_name} plan limit of {limit} adverts. Upgrade to Pro for unlimited posting.")
+
     a = Advert(**data.dict(), owner_id=u.id)
     db.add(a); db.commit(); db.refresh(a)
     return _advert_out(a)

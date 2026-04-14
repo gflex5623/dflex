@@ -28,7 +28,19 @@ export default function MyAdverts() {
   return (
     <div className="container my-adverts">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <h2>My Adverts</h2>
+        <div>
+          <h2>My Adverts</h2>
+          {user && (
+            <p style={{ fontSize: '0.85rem', color: '#888', marginTop: '0.2rem' }}>
+              Plan: <strong style={{ color: '#e94560' }}>{user.plan?.toUpperCase() || 'FREE'}</strong>
+              {' · '}{adverts.length} posted
+              {user.plan === 'free' || !user.plan ? ` · ${Math.max(0, 2 - adverts.length)} free remaining` : ''}
+              {(user.plan === 'free' || !user.plan) && adverts.length >= 2 && (
+                <a href="/pricing" style={{ color: '#e94560', marginLeft: '0.5rem', fontWeight: 600 }}>⬆ Upgrade to post more</a>
+              )}
+            </p>
+          )}
+        </div>
         <button className="btn-primary" onClick={() => navigate('/post')}>+ Post New</button>
       </div>
       {adverts.length === 0 ? (

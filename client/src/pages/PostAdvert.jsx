@@ -52,7 +52,13 @@ export default function PostAdvert() {
       }
       navigate('/my-adverts')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Something went wrong')
+      const detail = err.response?.data?.detail || 'Something went wrong'
+      const status = err.response?.status
+      if (status === 402) {
+        setError(detail + ' 👉 Go to /pricing to upgrade.')
+      } else {
+        setError(detail)
+      }
     }
   }
 
