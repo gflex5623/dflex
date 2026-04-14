@@ -539,6 +539,46 @@ def report_commission(data: CommissionReport, db: Session = Depends(get_db)):
     return {"commission_amount": commission, "rate": f"{COMMISSION_RATE*100}%",
             "message": f"Commission of ₦{commission:,.0f} recorded. Payment link will be sent to {data.buyer_email}"}
 
+# Manual payment submission (bank transfer / mobile money)
+@app.post("/api/payments/manual")
+def manual_payment(data: dict, db: Session = Depends(get_db)):
+    # Send notification email to admin
+    plan = data.get("plan", "")
+    user_email = data.get("user_email", "")
+    user_name = data.get("user_name", "")
+    method = data.get("payment_method", "")
+    ref = data.get("transaction_ref", "")
+    screenshot = data.get("screenshot_url", "")
+    amount = data.get("amount", 0)
+
+    body = f"""New Manual Payment Submission on dFlex!
+
+User: {user_name} ({user_email})
+Plan/Service: {plan}
+Amount: ₦{amount:,}
+Payment Method: {method}
+Transaction Ref: {ref}
+Screenshot: {screenshot or 'Not provided'}
+
+Please verify and activate the user's account.
+"""
+    send_reset_email("davidzarch0@gmail.com", "")  # reuse email function
+    # Send directly
+    try:
+        if SMTP_EMAIL and SMTP_PASSWORD:
+            from email.mime.text import MIMEText as _MIMEText
+            import smtplib as _smtp
+            msg = _MIMEText(body)
+            msg["Subject"] = f"dFlex Payment: {user_name} — {plan} via {method}"
+            msg["From"] = SMTP_EMAIL
+            msg["To"] = "davidzarch0@gmail.com"
+            with _smtp.SMTP_SSL("smtp.gmail.com", 465) as s:
+                s.login(SMTP_EMAIL, SMTP_PASSWORD)
+                s.sendmail(SMTP_EMAIL, "davidzarch0@gmail.com", msg.as_string())
+    except Exception as e:
+        print(f"Email error: {e}")
+    return {"message": "Payment proof submitted. Account will be activated within 1 hour."}
+
 # Get active banners
 @app.get("/api/banners")
 def get_banners(db: Session = Depends(get_db)):

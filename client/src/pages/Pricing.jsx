@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import api from '../api'
 
 const PAYSTACK_PUBLIC_KEY = 'pk_test_9df68d4c4b89e5b3eaf97171f096c2152407e421'
-
 const PLANS = [
   {
     key: 'free', name: 'Free', price: 0, color: '#888',
@@ -171,7 +170,7 @@ export default function Pricing() {
       </div>
 
       {/* Commission info */}
-      <div style={{ maxWidth: 600, margin: '0 auto', background: 'white', borderRadius: 12, padding: '2rem', boxShadow: '0 2px 16px rgba(0,0,0,0.08)', textAlign: 'center' }}>
+      <div style={{ maxWidth: 600, margin: '0 auto 2rem', background: 'white', borderRadius: 12, padding: '2rem', boxShadow: '0 2px 16px rgba(0,0,0,0.08)', textAlign: 'center' }}>
         <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🤝</div>
         <h2>Transaction Commission</h2>
         <p style={{ color: '#666', margin: '0.75rem 0 1rem' }}>
@@ -180,6 +179,109 @@ export default function Pricing() {
         <div style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '1rem' }}>2% <span style={{ fontSize: '0.9rem', fontWeight: 400, color: '#888' }}>of deal value</span></div>
         <p style={{ fontSize: '0.85rem', color: '#888' }}>Commission button available on every advert page.</p>
       </div>
+
+      {/* Manual Payment Methods */}
+      <div style={{ maxWidth: 700, margin: '0 auto 2rem', background: 'white', borderRadius: 12, padding: '2rem', boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}>
+        <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>💳 Pay via Bank Transfer / Mobile Money</h2>
+        <p style={{ textAlign: 'center', color: '#666', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+          Prefer to pay directly? Transfer to any of the accounts below, then submit your payment proof.
+        </p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+          {[
+            { bank: 'OPay', icon: '🟢', number: '6110346055', name: 'David Ahmed' },
+            { bank: 'PalmPay', icon: '🌴', number: '8990852086', name: 'David Ahmed' },
+            { bank: 'UBA', icon: '🔴', number: '2087569669', name: 'Ahmed David' },
+            { bank: 'Zenith Bank', icon: '🔵', number: '4297560296', name: 'David Ahmed' },
+          ].map(acc => (
+            <div key={acc.bank} style={{ background: '#f9f9f9', borderRadius: 10, padding: '1rem', border: '1px solid #eee' }}>
+              <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.4rem' }}>{acc.icon} {acc.bank}</div>
+              <div style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: 1, color: '#1a1a2e', marginBottom: '0.2rem' }}>{acc.number}</div>
+              <div style={{ fontSize: '0.85rem', color: '#666' }}>{acc.name}</div>
+              <button
+                style={{ marginTop: '0.5rem', background: 'none', border: 'none', color: '#e94560', cursor: 'pointer', fontSize: '0.8rem', padding: 0 }}
+                onClick={() => { navigator.clipboard.writeText(acc.number); }}
+              >
+                📋 Copy number
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <ManualPaymentForm user={user} navigate={navigate} setSuccess={setSuccess} setMsg={setMsg} />
+      </div>
     </div>
+  )
+}
+
+function ManualPaymentForm({ user, navigate, setSuccess, setMsg }) {
+  const [form, setForm] = useState({ plan: 'basic', payment_method: 'OPay', amount: '', transaction_ref: '', screenshot_url: '' })
+  const [loading, setLoading] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  const AMOUNTS = { basic: 2000, pro: 5000, verification: 1000, banner: 10000 }
+
+  const handleSubmit = async e => {
+    e.preventDefault()
+    if (!user) { navigate('/login'); return }
+    setLoading(true)
+    try {
+      await api.post('/payments/manual', {
+        ...form,
+        amount: AMOUNTS[form.plan],
+        user_email: user.email,
+        user_name: user.name
+      })
+      setSent(true)
+      setSuccess('✅ Payment submitted! Your account will be activated within 1 hour after confirmation.')
+    } catch {
+      setMsg('Submission failed. Please try again or contact support.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (sent) return (
+    <div style={{ background: '#f0fff4', border: '1px solid #68d391', borderRadius: 8, padding: '1rem', color: '#276749', textAlign: 'center' }}>
+      ✅ Payment proof submitted! We'll activate your account within 1 hour.<br />
+      <small>Questions? Email: davidzarch0@gmail.com</small>
+    </div>
+  )
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <h3 style={{ marginBottom: '1rem', fontSize: '1rem' }}>Submit Payment Proof</h3>
+      <div className="form-row">
+        <div className="form-group">
+          <label>What are you paying for?</label>
+          <select value={form.plan} onChange={e => setForm({...form, plan: e.target.value})}>
+            <option value="basic">Basic Plan — ₦2,000/month</option>
+            <option value="pro">Pro Plan — ₦5,000/month</option>
+            <option value="verification">Verified Badge — ₦1,000</option>
+            <option value="banner">Banner Ad — ₦10,000/month</option>
+          </select>
+        </div>
+        <div className="form-group">
+          <label>Payment Method Used</label>
+          <select value={form.payment_method} onChange={e => setForm({...form, payment_method: e.target.value})}>
+            <option>OPay</option>
+            <option>PalmPay</option>
+            <option>UBA</option>
+            <option>Zenith Bank</option>
+          </select>
+        </div>
+      </div>
+      <div className="form-group">
+        <label>Transaction Reference / Receipt Number</label>
+        <input value={form.transaction_ref} onChange={e => setForm({...form, transaction_ref: e.target.value})} required placeholder="e.g. TXN123456789" />
+      </div>
+      <div className="form-group">
+        <label>Screenshot URL <span style={{color:'#888',fontSize:'0.8rem'}}>(optional — upload to imgbb.com or similar)</span></label>
+        <input value={form.screenshot_url} onChange={e => setForm({...form, screenshot_url: e.target.value})} placeholder="https://..." />
+      </div>
+      <button type="submit" className="btn-primary" style={{ width: '100%', padding: '0.75rem' }} disabled={loading}>
+        {loading ? 'Submitting...' : 'Submit Payment Proof'}
+      </button>
+    </form>
   )
 }
