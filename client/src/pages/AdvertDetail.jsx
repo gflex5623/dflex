@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import { formatPrice } from '../utils/currency'
+import CommissionReport from '../components/CommissionReport'
 
 export default function AdvertDetail() {
   const { id } = useParams()
@@ -41,7 +42,7 @@ export default function AdvertDetail() {
           <h1>{advert.title}</h1>
           <div className="detail-meta">
             {advert.location && <span>📍 {advert.location}</span>}
-            <span>👤 {advert.owner.name}</span>
+            <span>👤 {advert.owner.name} {advert.owner.is_verified && <span title="Verified Business">✅</span>}</span>
             <span>📅 {new Date(advert.created_at).toLocaleDateString()}</span>
           </div>
           {advert.price != null && (
@@ -53,6 +54,7 @@ export default function AdvertDetail() {
               <strong>Contact:</strong> {advert.contact}
             </div>
           )}
+          <CommissionReport advertId={advert.id} advertTitle={advert.title} />
           {user && user.id === advert.owner.id && (
             <div className="advert-actions" style={{ marginTop: '1.5rem' }}>
               <button className="btn-primary btn-sm" onClick={() => navigate(`/edit/${advert.id}`)}>Edit</button>

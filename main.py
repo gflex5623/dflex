@@ -47,6 +47,8 @@ class User(Base):
     name = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     password_hash = Column(String, nullable=False)
+    plan = Column(String, default="free")  # free, basic, pro
+    is_verified = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     adverts = relationship("Advert", back_populates="owner")
 
@@ -81,6 +83,52 @@ class PasswordReset(Base):
     token = Column(String, unique=True, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+# ── Monetization Models ───────────────────────────────────
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    plan = Column(String, nullable=False)  # free, basic, pro
+    status = Column(String, default="active")
+    paystack_ref = Column(String, nullable=True)
+    started_at = Column(DateTime, default=datetime.utcnow)
+    expires_at = Column(DateTime, nullable=True)
+    user = relationship("User")
+
+class BannerAd(Base):
+    __tablename__ = "banner_ads"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    image_url = Column(String, nullable=False)
+    link_url = Column(String, nullable=True)
+    advertiser = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    starts_at = Column(DateTime, default=datetime.utcnow)
+    ends_at = Column(DateTime, nullable=True)
+    paystack_ref = Column(String, nullable=True)
+
+class Commission(Base):
+    __tablename__ = "commissions"
+    id = Column(Integer, primary_key=True, index=True)
+    advert_id = Column(Integer, ForeignKey("adverts.id"), nullable=False)
+    buyer_name = Column(String, nullable=False)
+    buyer_email = Column(String, nullable=False)
+    deal_amount = Column(Float, nullable=False)
+    commission_amount = Column(Float, nullable=False)
+    status = Column(String, default="pending")  # pending, paid
+    paystack_ref = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    advert = relationship("Advert")
+
+class VerificationRequest(Base):
+    __tablename__ = "verification_requests"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    status = Column(String, default="pending")  # pending, verified, rejected
+    paystack_ref = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    user = relationship("User")
+
 Base.metadata.create_all(bind=engine)
 
 # Keep-alive: ping self every 10 minutes to prevent Render free tier sleep
@@ -107,6 +155,17 @@ try:
             try:
                 conn.execute(__import__('sqlalchemy').text(
                     f"ALTER TABLE adverts ADD COLUMN IF NOT EXISTS {col} {typedef}"
+                ))
+            except:
+                pass
+        # Add user monetization columns
+        for col, typedef in [
+            ("plan", "VARCHAR DEFAULT 'free'"),
+            ("is_verified", "BOOLEAN DEFAULT FALSE"),
+        ]:
+            try:
+                conn.execute(__import__('sqlalchemy').text(
+                    f"ALTER TABLE users ADD COLUMN IF NOT EXISTS {col} {typedef}"
                 ))
             except:
                 pass
@@ -224,6 +283,35 @@ async def robots():
     from fastapi.responses import PlainTextResponse
     return PlainTextResponse("User-agent: *\nAllow: /\nSitemap: https://dflex-fdya.onrender.com/sitemap.xml")
 
+# ── Paystack Config ───────────────────────────────────────
+PAYSTACK_SECRET = os.environ.get("PAYSTACK_SECRET_KEY", "")
+PAYSTACK_PUBLIC = os.environ.get("PAYSTACK_PUBLIC_KEY", "")
+
+PLANS = {
+    "free":  {"name": "Free",  "price": 0,     "adverts": 3,   "features": ["3 adverts/month", "Photo upload"]},
+    "basic": {"name": "Basic", "price": 200000, "adverts": 10,  "features": ["10 adverts/month", "Photo & video upload", "Priority listing"]},
+    "pro":   {"name": "Pro",   "price": 500000, "adverts": 999, "features": ["Unlimited adverts", "Photo & video upload", "Featured badge", "Top placement"]},
+}
+COMMISSION_RATE = 0.02   # 2%
+VERIFICATION_FEE = 100000  # ₦1,000 in kobo
+BANNER_FEE = 1000000       # ₦10,000/month in kobo
+
+# ── Monetization Schemas ──────────────────────────────────
+class PaystackVerify(BaseModel):
+    reference: str
+
+class CommissionReport(BaseModel):
+    advert_id: int
+    buyer_name: str
+    buyer_email: str
+    deal_amount: float
+
+class BannerAdCreate(BaseModel):
+    title: str
+    image_url: str
+    link_url: Optional[str] = None
+    advertiser: str
+
 # ── Routes ────────────────────────────────────────────────
 @app.post("/api/auth/register")
 def register(data: UserCreate, db: Session = Depends(get_db)):
@@ -232,7 +320,9 @@ def register(data: UserCreate, db: Session = Depends(get_db)):
     user = User(name=data.name, email=data.email, password_hash=hash_password(data.password))
     db.add(user); db.commit(); db.refresh(user)
     return {"access_token": create_token(user.id), "token_type": "bearer",
-            "user": {"id": user.id, "name": user.name, "email": user.email, "created_at": str(user.created_at)}}
+            "user": {"id": user.id, "name": user.name, "email": user.email,
+                     "plan": user.plan, "is_verified": user.is_verified,
+                     "created_at": str(user.created_at)}}
 
 @app.post("/api/auth/login")
 def login(data: UserLogin, db: Session = Depends(get_db)):
@@ -240,11 +330,15 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(401, "Invalid credentials")
     return {"access_token": create_token(user.id), "token_type": "bearer",
-            "user": {"id": user.id, "name": user.name, "email": user.email, "created_at": str(user.created_at)}}
+            "user": {"id": user.id, "name": user.name, "email": user.email,
+                     "plan": user.plan, "is_verified": user.is_verified,
+                     "created_at": str(user.created_at)}}
 
 @app.get("/api/auth/me")
 def get_me(u=Depends(get_current_user)):
-    return {"id": u.id, "name": u.name, "email": u.email, "created_at": str(u.created_at)}
+    return {"id": u.id, "name": u.name, "email": u.email,
+            "plan": u.plan, "is_verified": u.is_verified,
+            "created_at": str(u.created_at)}
 
 @app.post("/api/auth/forgot-password")
 def forgot_password(data: ForgotPassword, db: Session = Depends(get_db)):
@@ -339,6 +433,118 @@ def _advert_out(a):
             "created_at": str(a.created_at),
             "category": {"id": a.category.id, "name": a.category.name} if a.category else None,
             "owner": {"id": a.owner.id, "name": a.owner.name, "email": a.owner.email, "created_at": str(a.owner.created_at)}}
+
+# ── Monetization Routes ───────────────────────────────────
+
+# Plans info
+@app.get("/api/plans")
+def get_plans():
+    return PLANS
+
+# Initialize Paystack payment
+@app.post("/api/payments/initialize")
+def init_payment(data: dict, u=Depends(get_current_user)):
+    import json as _json
+    payment_type = data.get("type")  # subscription, verification, banner, commission
+    plan = data.get("plan", "basic")
+
+    amount_map = {
+        "subscription_basic": 200000,
+        "subscription_pro": 500000,
+        "verification": VERIFICATION_FEE,
+        "banner": BANNER_FEE,
+    }
+    amount = amount_map.get(f"{payment_type}_{plan}" if payment_type == "subscription" else payment_type, 0)
+    if not amount:
+        raise HTTPException(400, "Invalid payment type")
+
+    if not PAYSTACK_SECRET:
+        # Demo mode — return mock reference
+        ref = secrets.token_hex(8)
+        return {"authorization_url": f"https://dflex-fdya.onrender.com/pricing?demo=1&ref={ref}", "reference": ref, "demo": True}
+
+    payload = _json.dumps({
+        "email": u.email,
+        "amount": amount,
+        "reference": secrets.token_hex(16),
+        "metadata": {"payment_type": payment_type, "plan": plan, "user_id": u.id}
+    }).encode()
+    req = urllib.request.Request("https://api.paystack.co/transaction/initialize",
+        data=payload, headers={"Authorization": f"Bearer {PAYSTACK_SECRET}", "Content-Type": "application/json"})
+    try:
+        res = urllib.request.urlopen(req)
+        result = _json.loads(res.read())
+        return result.get("data", {})
+    except Exception as e:
+        raise HTTPException(500, f"Payment init failed: {e}")
+
+# Verify Paystack payment
+@app.post("/api/payments/verify")
+def verify_payment(data: PaystackVerify, db: Session = Depends(get_db), u=Depends(get_current_user)):
+    import json as _json
+    ref = data.reference
+
+    if not PAYSTACK_SECRET:
+        # Demo mode — just activate based on ref pattern
+        return {"status": "success", "message": "Demo payment verified"}
+
+    req = urllib.request.Request(f"https://api.paystack.co/transaction/verify/{ref}",
+        headers={"Authorization": f"Bearer {PAYSTACK_SECRET}"})
+    try:
+        res = urllib.request.urlopen(req)
+        result = _json.loads(res.read())
+        tx = result.get("data", {})
+        if tx.get("status") != "success":
+            raise HTTPException(400, "Payment not successful")
+        meta = tx.get("metadata", {})
+        payment_type = meta.get("payment_type")
+        plan = meta.get("plan")
+
+        if payment_type == "subscription":
+            u.plan = plan
+            db.add(Subscription(user_id=u.id, plan=plan, paystack_ref=ref,
+                expires_at=datetime.utcnow() + timedelta(days=30)))
+        elif payment_type == "verification":
+            u.is_verified = True
+            db.add(VerificationRequest(user_id=u.id, status="verified", paystack_ref=ref))
+        db.commit()
+        return {"status": "success", "plan": u.plan, "is_verified": u.is_verified}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Verification failed: {e}")
+
+# Get subscription status
+@app.get("/api/subscription")
+def get_subscription(u=Depends(get_current_user), db: Session = Depends(get_db)):
+    sub = db.query(Subscription).filter(Subscription.user_id == u.id, Subscription.status == "active").order_by(Subscription.id.desc()).first()
+    return {"plan": u.plan, "is_verified": u.is_verified,
+            "expires_at": str(sub.expires_at) if sub else None,
+            "plans": PLANS}
+
+# Commission report (buyer reports a deal)
+@app.post("/api/commissions")
+def report_commission(data: CommissionReport, db: Session = Depends(get_db)):
+    advert = db.query(Advert).filter(Advert.id == data.advert_id).first()
+    if not advert: raise HTTPException(404, "Advert not found")
+    commission = data.deal_amount * COMMISSION_RATE
+    c = Commission(advert_id=data.advert_id, buyer_name=data.buyer_name,
+                   buyer_email=data.buyer_email, deal_amount=data.deal_amount,
+                   commission_amount=commission)
+    db.add(c); db.commit(); db.refresh(c)
+    return {"commission_amount": commission, "rate": f"{COMMISSION_RATE*100}%",
+            "message": f"Commission of ₦{commission:,.0f} recorded. Payment link will be sent to {data.buyer_email}"}
+
+# Get active banners
+@app.get("/api/banners")
+def get_banners(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    banners = db.query(BannerAd).filter(
+        BannerAd.is_active == True,
+        (BannerAd.ends_at == None) | (BannerAd.ends_at > now)
+    ).all()
+    return [{"id": b.id, "title": b.title, "image_url": b.image_url,
+             "link_url": b.link_url, "advertiser": b.advertiser} for b in banners]
 
 # ── Static frontend ───────────────────────────────────────
 STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "backend", "static")

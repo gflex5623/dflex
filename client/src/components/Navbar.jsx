@@ -16,6 +16,7 @@ export default function Navbar() {
         <Link to="/" className="logo"><span>d</span>Flex</Link>
         <nav>
           <Link to="/">Browse</Link>
+          <Link to="/pricing">Pricing</Link>
           {user ? (
             <>
               <Link to="/my-adverts">My Adverts</Link>

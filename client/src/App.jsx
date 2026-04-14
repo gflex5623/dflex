@@ -9,6 +9,7 @@ import PostAdvert from './pages/PostAdvert'
 import MyAdverts from './pages/MyAdverts'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import Pricing from './pages/Pricing'
 
 function AppRoutes() {
   const { loading } = useAuth()
@@ -30,6 +31,7 @@ function AppRoutes() {
         <Route path="/my-adverts" element={<MyAdverts />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/pricing" element={<Pricing />} />
       </Routes>
     </>
   )
