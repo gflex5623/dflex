@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import api from '../api'
 import { useAuth } from '../context/AuthContext'
 import ImageUpload from '../components/ImageUpload'
+import VideoUpload from '../components/VideoUpload'
 
 export default function PostAdvert() {
   const { id } = useParams()
@@ -13,7 +14,7 @@ export default function PostAdvert() {
   const [error, setError] = useState('')
   const [form, setForm] = useState({
     title: '', description: '', price: '', location: '',
-    contact: '', image_url: '', category_id: '', currency: 'USD'
+    contact: '', image_url: '', video_url: '', category_id: '', currency: 'NGN'
   })
 
   useEffect(() => {
@@ -26,7 +27,8 @@ export default function PostAdvert() {
           title: a.title, description: a.description,
           price: a.price ?? '', location: a.location ?? '',
           contact: a.contact ?? '', image_url: a.image_url ?? '',
-          category_id: a.category?.id ?? '', currency: a.currency ?? 'USD'
+          video_url: a.video_url ?? '',
+          category_id: a.category?.id ?? '', currency: a.currency ?? 'NGN'
         })
       })
     }
@@ -112,6 +114,13 @@ export default function PostAdvert() {
             <ImageUpload
               currentImage={form.image_url}
               onUpload={(url) => setForm({ ...form, image_url: url })}
+            />
+          </div>
+          <div className="form-group">
+            <label>Business Video <span style={{fontSize:'0.8rem',color:'#888'}}>(optional — max 100MB)</span></label>
+            <VideoUpload
+              currentVideo={form.video_url}
+              onUpload={(url) => setForm({ ...form, video_url: url })}
             />
           </div>
           {error && <p className="error-msg">{error}</p>}

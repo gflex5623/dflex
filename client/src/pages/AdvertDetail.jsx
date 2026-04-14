@@ -31,6 +31,9 @@ export default function AdvertDetail() {
     <div className="container" style={{ padding: '2rem 1rem' }}>
       <div className="advert-detail">
         {advert.image_url && <img src={advert.image_url} alt={advert.title} />}
+        {advert.video_url && (
+          <video src={advert.video_url} controls style={{width:'100%',maxHeight:420,background:'#000',display:'block'}} />
+        )}
         <div className="detail-body">
           {advert.category && (
             <span className="category-tag">{advert.category.name}</span>
