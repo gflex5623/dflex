@@ -267,22 +267,25 @@ async def ping():
     return {"status": "ok"}
 
 # Admin: upgrade user plan (internal use)
+class AdminUpgrade(BaseModel):
+    secret: str
+    emails: List[str]
+    plan: Optional[str] = "pro"
+
 @app.post("/api/admin/upgrade")
-def admin_upgrade(data: dict):
-    secret = data.get("secret")
-    if secret != "dflex-admin-2024":
+def admin_upgrade(data: AdminUpgrade):
+    if data.secret != "dflex-admin-2024":
         raise HTTPException(403, "Forbidden")
-    from sqlalchemy import text as _text
-    emails = data.get("emails", [])
-    plan = data.get("plan", "pro")
     db = SessionLocal()
     try:
-        for email in emails:
+        updated = 0
+        for email in data.emails:
             user = db.query(User).filter(User.email == email).first()
             if user:
-                user.plan = plan
+                user.plan = data.plan
+                updated += 1
         db.commit()
-        return {"updated": len(emails), "plan": plan}
+        return {"updated": updated, "plan": data.plan}
     finally:
         db.close()
 
