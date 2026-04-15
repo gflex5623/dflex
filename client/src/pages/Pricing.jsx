@@ -209,6 +209,35 @@ export default function Pricing() {
         </div>
 
         <ManualPaymentForm user={user} navigate={navigate} setSuccess={setSuccess} setMsg={setMsg} />
+
+        {/* Contact Info */}
+        <div style={{ marginTop: '1.5rem', background: '#1a1a2e', borderRadius: 10, padding: '1.5rem', color: 'white' }}>
+          <h3 style={{ marginBottom: '1rem', color: '#e94560' }}>📞 Contact Us After Payment</h3>
+          <p style={{ fontSize: '0.85rem', opacity: 0.8, marginBottom: '1rem' }}>
+            After making payment, contact us via any of the channels below to activate your account within 1 hour.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem' }}>
+            {[
+              { icon: '💬', label: 'WhatsApp', value: '+234 810 938 8210', link: 'https://wa.me/2348109388210?text=Hi%20dFlex%2C%20I%20just%20made%20a%20payment' },
+              { icon: '📞', label: 'Call (Line 1)', value: '+234 810 938 8210', link: 'tel:+2348109388210' },
+              { icon: '📞', label: 'Call (Line 2)', value: '+234 907 607 1589', link: 'tel:+2349076071589' },
+              { icon: '📧', label: 'Email', value: 'davidzarch0@gmail.com', link: 'mailto:davidzarch0@gmail.com' },
+              { icon: '📘', label: 'Facebook', value: 'Dflex', link: 'https://facebook.com/Dflex' },
+              { icon: '🎵', label: 'TikTok', value: '@Dflex', link: 'https://tiktok.com/@Dflex' },
+            ].map(c => (
+              <a key={c.label} href={c.link} target="_blank" rel="noreferrer"
+                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'rgba(255,255,255,0.08)', borderRadius: 8, padding: '0.75rem', textDecoration: 'none', color: 'white', transition: 'background 0.2s' }}
+                onMouseOver={e => e.currentTarget.style.background='rgba(233,69,96,0.3)'}
+                onMouseOut={e => e.currentTarget.style.background='rgba(255,255,255,0.08)'}>
+                <span style={{ fontSize: '1.3rem' }}>{c.icon}</span>
+                <div>
+                  <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{c.label}</div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{c.value}</div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   )
