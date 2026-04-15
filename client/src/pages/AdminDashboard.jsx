@@ -117,12 +117,66 @@ export default function AdminDashboard() {
                 </div>
               ))}
             </div>
+            <div style={{ background: 'white', borderRadius: 10, padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+              <h3>⚡ Quick Actions</h3>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                <a href="/pricing" className="btn-primary" style={{ padding: '0.6rem 1.2rem', textDecoration: 'none' }}>💳 Pricing Page</a>
+                <a href="/" className="btn-outline" style={{ padding: '0.6rem 1.2rem', textDecoration: 'none' }}>🏠 Browse Adverts</a>
+                <a href="/post" className="btn-primary" style={{ padding: '0.6rem 1.2rem', textDecoration: 'none', background: '#1a1a2e' }}>➕ Post Advert</a>
+                <a href="/my-adverts" className="btn-outline" style={{ padding: '0.6rem 1.2rem', textDecoration: 'none' }}>📋 My Adverts</a>
+              </div>
+            </div>
+
+            {/* Payment & Upgrade */}
+            <div style={{ background: 'white', borderRadius: 10, padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+              <h3 style={{ marginBottom: '0.75rem' }}>💰 Upgrade Users After Payment</h3>
+              <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '1rem' }}>After a user pays via Paystack, OPay, PalmPay, UBA, or Zenith — go to the <strong>Users</strong> tab and click the upgrade button next to their name.</p>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                <button className="btn-primary" style={{ background: '#d69e2e' }} onClick={() => { setTab('users'); loadUsers(); }}>⬆ Upgrade to Pro (₦5,000)</button>
+                <button className="btn-primary" style={{ background: '#3182ce' }} onClick={() => { setTab('users'); loadUsers(); }}>⬆ Upgrade to Basic (₦2,000)</button>
+                <button className="btn-primary" style={{ background: '#38a169' }} onClick={() => { setTab('users'); loadUsers(); }}>✅ Verify User (₦1,000)</button>
+              </div>
+              <div style={{ background: '#fffbeb', border: '1px solid #f6e05e', borderRadius: 8, padding: '1rem', fontSize: '0.85rem' }}>
+                <strong>Steps:</strong> Users tab → Search user → Click upgrade/verify button → Done ✓
+              </div>
+            </div>
+
+            {/* Payment Dashboards */}
+            <div style={{ background: 'white', borderRadius: 10, padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+              <h3 style={{ marginBottom: '1rem' }}>🏦 Payment Dashboards</h3>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Paystack', url: 'https://dashboard.paystack.com', bg: '#00c3f7' },
+                  { label: 'OPay Merchant', url: 'https://merchant.opay.ng', bg: '#1a8917' },
+                  { label: 'PalmPay Business', url: 'https://business.palmpay.com', bg: '#00b14f' },
+                  { label: 'UBA Internet Banking', url: 'https://ibank.ubagroup.com', bg: '#e31e24' },
+                  { label: 'Zenith Internet Banking', url: 'https://ibank.zenithbank.com', bg: '#003087' },
+                ].map(p => (
+                  <a key={p.label} href={p.url} target="_blank" rel="noreferrer"
+                    style={{ background: p.bg, color: 'white', padding: '0.6rem 1.2rem', borderRadius: 6, textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>
+                    {p.label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* App Management */}
             <div style={{ background: 'white', borderRadius: 10, padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-              <h3>Quick Actions</h3>
-              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-                <a href="/pricing" className="btn-primary" style={{ padding: '0.6rem 1.2rem', textDecoration: 'none' }}>View Pricing Page</a>
-                <a href="/" className="btn-outline" style={{ padding: '0.6rem 1.2rem', textDecoration: 'none' }}>Browse Adverts</a>
-                <a href="/post" className="btn-primary" style={{ padding: '0.6rem 1.2rem', textDecoration: 'none', background: '#1a1a2e' }}>Post New Advert</a>
+              <h3 style={{ marginBottom: '1rem' }}>🔧 App Management</h3>
+              <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {[
+                  { label: 'Render Dashboard', url: 'https://dashboard.render.com' },
+                  { label: 'GitHub Repo', url: 'https://github.com/gflex5623/dflex' },
+                  { label: 'Cloudinary (Media)', url: 'https://cloudinary.com/console' },
+                  { label: 'Google Search Console', url: 'https://search.google.com/search-console' },
+                  { label: 'API Docs', url: 'https://dflex-fdya.onrender.com/docs' },
+                  { label: 'Paystack Settings', url: 'https://dashboard.paystack.com/#/settings/developers' },
+                ].map(l => (
+                  <a key={l.label} href={l.url} target="_blank" rel="noreferrer" className="btn-outline"
+                    style={{ padding: '0.5rem 1rem', textDecoration: 'none', fontSize: '0.85rem' }}>
+                    {l.label}
+                  </a>
+                ))}
               </div>
             </div>
           </div>
