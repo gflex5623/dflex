@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const isAdmin = user?.email === 'davidzarch0@gmail.com'
 
   const handleLogout = () => {
     logout()
@@ -21,6 +22,7 @@ export default function Navbar() {
             <>
               <Link to="/my-adverts">My Adverts</Link>
               <Link to="/post">Post Advert</Link>
+              {isAdmin && <Link to="/admin" style={{ color: '#e94560', fontWeight: 700 }}>⚙️ Admin</Link>}
               <button onClick={handleLogout}>Logout</button>
             </>
           ) : (
