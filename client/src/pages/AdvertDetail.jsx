@@ -40,11 +40,21 @@ function ShareButtons({ advertId, title, location }) {
 export default function AdvertDetail() {
   const { id } = useParams()
   const [advert, setAdvert] = useState(null)
+  const [allIds, setAllIds] = useState([])
   const [loading, setLoading] = useState(true)
   const { user } = useAuth()
   const navigate = useNavigate()
 
+  // Load all advert IDs for next/prev navigation
   useEffect(() => {
+    api.get('/adverts/?limit=500').then(r => {
+      setAllIds(r.data.map(a => a.id))
+    })
+  }, [])
+
+  useEffect(() => {
+    setLoading(true)
+    window.scrollTo(0, 0)
     api.get(`/adverts/${id}`)
       .then(r => setAdvert(r.data))
       .catch(() => navigate('/'))
@@ -57,11 +67,22 @@ export default function AdvertDetail() {
     navigate('/my-adverts')
   }
 
+  const currentIndex = allIds.indexOf(parseInt(id))
+  const prevId = currentIndex > 0 ? allIds[currentIndex - 1] : null
+  const nextId = currentIndex < allIds.length - 1 ? allIds[currentIndex + 1] : null
+
   if (loading) return <div className="loading">Loading...</div>
   if (!advert) return null
 
   return (
     <div className="container" style={{ padding: '2rem 1rem' }}>
+
+      {/* Back button */}
+      <button onClick={() => navigate('/')}
+        style={{ background: 'none', border: 'none', color: '#e94560', cursor: 'pointer', fontSize: '0.9rem', marginBottom: '1rem', padding: 0 }}>
+        ← Back to listings
+      </button>
+
       <div className="advert-detail">
         {advert.image_url && <img src={advert.image_url} alt={advert.title} />}
         {advert.video_url && (
@@ -96,6 +117,48 @@ export default function AdvertDetail() {
           )}
         </div>
       </div>
+
+      {/* Next / Previous Navigation */}
+      {allIds.length > 0 && (
+        <div style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          marginTop: '2rem', padding: '1rem 1.5rem',
+          background: 'white', borderRadius: 10,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)'
+        }}>
+          <button
+            onClick={() => prevId && navigate(`/advert/${prevId}`)}
+            disabled={!prevId}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: prevId ? '#1a1a2e' : '#eee',
+              color: prevId ? 'white' : '#aaa',
+              border: 'none', padding: '0.65rem 1.2rem',
+              borderRadius: 8, cursor: prevId ? 'pointer' : 'not-allowed',
+              fontSize: '0.9rem', fontWeight: 600, transition: 'background 0.2s'
+            }}>
+            ← Previous
+          </button>
+
+          <span style={{ color: '#888', fontSize: '0.85rem' }}>
+            {currentIndex + 1} of {allIds.length}
+          </span>
+
+          <button
+            onClick={() => nextId && navigate(`/advert/${nextId}`)}
+            disabled={!nextId}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.5rem',
+              background: nextId ? '#e94560' : '#eee',
+              color: nextId ? 'white' : '#aaa',
+              border: 'none', padding: '0.65rem 1.2rem',
+              borderRadius: 8, cursor: nextId ? 'pointer' : 'not-allowed',
+              fontSize: '0.9rem', fontWeight: 600, transition: 'background 0.2s'
+            }}>
+            Next →
+          </button>
+        </div>
+      )}
     </div>
   )
 }
