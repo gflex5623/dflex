@@ -279,6 +279,11 @@ class AdminVerify(BaseModel):
     secret: str
     email: str
 
+class AdminSettings(BaseModel):
+    secret: str
+    key: str
+    value: str
+
 class AdminEditAdvert(BaseModel):
     secret: str
     advert_id: int
@@ -322,6 +327,20 @@ def admin_verify(data: AdminVerify):
         return {"verified": True, "email": data.email}
     finally:
         db.close()
+
+# App settings (hero background etc.)
+_settings = {}
+
+@app.post("/api/admin/settings")
+def save_setting(data: AdminSettings):
+    if data.secret != ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+    _settings[data.key] = data.value
+    return {"saved": True, "key": data.key}
+
+@app.get("/api/settings")
+def get_settings():
+    return _settings
 
 @app.get("/api/admin/users")
 def admin_get_users(secret: str, db: Session = Depends(get_db)):
