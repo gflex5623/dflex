@@ -266,15 +266,34 @@ SEED_CATS = ["Real Estate","Vehicles","Electronics","Jobs","Services","Fashion",
 async def ping():
     return {"status": "ok"}
 
-# Admin: upgrade user plan (internal use)
+# ── Admin Endpoints ───────────────────────────────────────
+ADMIN_SECRET = "dflex-admin-2024"
+ADMIN_EMAIL = "davidzarch0@gmail.com"
+
 class AdminUpgrade(BaseModel):
     secret: str
     emails: List[str]
     plan: Optional[str] = "pro"
 
+class AdminVerify(BaseModel):
+    secret: str
+    email: str
+
+class AdminEditAdvert(BaseModel):
+    secret: str
+    advert_id: int
+    title: Optional[str] = None
+    description: Optional[str] = None
+    price: Optional[float] = None
+    location: Optional[str] = None
+    contact: Optional[str] = None
+    is_active: Optional[bool] = None
+    category_id: Optional[int] = None
+    currency: Optional[str] = None
+
 @app.post("/api/admin/upgrade")
 def admin_upgrade(data: AdminUpgrade):
-    if data.secret != "dflex-admin-2024":
+    if data.secret != ADMIN_SECRET:
         raise HTTPException(403, "Forbidden")
     db = SessionLocal()
     try:
@@ -288,6 +307,107 @@ def admin_upgrade(data: AdminUpgrade):
         return {"updated": updated, "plan": data.plan}
     finally:
         db.close()
+
+@app.post("/api/admin/verify")
+def admin_verify(data: AdminVerify):
+    if data.secret != ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == data.email).first()
+        if not user:
+            raise HTTPException(404, "User not found")
+        user.is_verified = True
+        db.commit()
+        return {"verified": True, "email": data.email}
+    finally:
+        db.close()
+
+@app.get("/api/admin/users")
+def admin_get_users(secret: str, db: Session = Depends(get_db)):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+    users = db.query(User).order_by(User.created_at.desc()).all()
+    return [{"id": u.id, "name": u.name, "email": u.email,
+             "plan": u.plan, "is_verified": u.is_verified,
+             "advert_count": len(u.adverts),
+             "created_at": str(u.created_at)} for u in users]
+
+@app.get("/api/admin/adverts")
+def admin_get_adverts(secret: str, db: Session = Depends(get_db)):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+    adverts = db.query(Advert).order_by(Advert.created_at.desc()).all()
+    return [{"id": a.id, "title": a.title, "owner": a.owner.name,
+             "owner_email": a.owner.email, "is_active": a.is_active,
+             "category": a.category.name if a.category else None,
+             "created_at": str(a.created_at)} for a in adverts]
+
+@app.post("/api/admin/edit-advert")
+def admin_edit_advert(data: AdminEditAdvert, db: Session = Depends(get_db)):
+    if data.secret != ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+    advert = db.query(Advert).filter(Advert.id == data.advert_id).first()
+    if not advert:
+        raise HTTPException(404, "Advert not found")
+    for field in ["title", "description", "price", "location", "contact", "is_active", "category_id", "currency"]:
+        val = getattr(data, field)
+        if val is not None:
+            setattr(advert, field, val)
+    db.commit()
+    return {"updated": True, "advert_id": data.advert_id}
+
+@app.delete("/api/admin/delete-advert/{advert_id}")
+def admin_delete_advert(advert_id: int, secret: str, db: Session = Depends(get_db)):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+    advert = db.query(Advert).filter(Advert.id == advert_id).first()
+    if not advert:
+        raise HTTPException(404, "Not found")
+    db.delete(advert)
+    db.commit()
+    return {"deleted": True}
+
+@app.get("/api/admin/stats")
+def admin_stats(secret: str, db: Session = Depends(get_db)):
+    if secret != ADMIN_SECRET:
+        raise HTTPException(403, "Forbidden")
+    total_users = db.query(User).count()
+    total_adverts = db.query(Advert).count()
+    active_adverts = db.query(Advert).filter(Advert.is_active == True).count()
+    pro_users = db.query(User).filter(User.plan == "pro").count()
+    basic_users = db.query(User).filter(User.plan == "basic").count()
+    verified_users = db.query(User).filter(User.is_verified == True).count()
+    return {
+        "total_users": total_users,
+        "total_adverts": total_adverts,
+        "active_adverts": active_adverts,
+        "pro_users": pro_users,
+        "basic_users": basic_users,
+        "verified_users": verified_users,
+        "free_users": total_users - pro_users - basic_users
+    }
+
+# Social share links for any advert
+@app.get("/api/adverts/{advert_id}/share")
+def get_share_links(advert_id: int, db: Session = Depends(get_db)):
+    advert = db.query(Advert).filter(Advert.id == advert_id).first()
+    if not advert:
+        raise HTTPException(404, "Not found")
+    url = f"https://dflex-fdya.onrender.com/advert/{advert_id}"
+    text = f"{advert.title} — {advert.location or 'Nigeria'} | dFlex"
+    import urllib.parse
+    encoded_url = urllib.parse.quote(url)
+    encoded_text = urllib.parse.quote(text)
+    return {
+        "url": url,
+        "whatsapp": f"https://wa.me/?text={encoded_text}%20{encoded_url}",
+        "facebook": f"https://www.facebook.com/sharer/sharer.php?u={encoded_url}",
+        "twitter": f"https://twitter.com/intent/tweet?text={encoded_text}&url={encoded_url}",
+        "linkedin": f"https://www.linkedin.com/sharing/share-offsite/?url={encoded_url}",
+        "telegram": f"https://t.me/share/url?url={encoded_url}&text={encoded_text}",
+        "copy": url
+    }
 
 @app.get("/sitemap.xml")
 async def sitemap():
