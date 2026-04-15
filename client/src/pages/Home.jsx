@@ -17,10 +17,18 @@ export default function Home() {
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [loading, setLoading] = useState(true)
+  const [heroBg, setHeroBg] = useState(localStorage.getItem('dflex_bg') || '')
   const navigate = useNavigate()
 
   useEffect(() => {
     api.get('/categories/').then(r => setCategories(r.data))
+    // Load hero background from server
+    api.get('/settings').then(r => {
+      if (r.data.hero_bg) {
+        setHeroBg(r.data.hero_bg)
+        localStorage.setItem('dflex_bg', r.data.hero_bg)
+      }
+    }).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -37,7 +45,10 @@ export default function Home() {
 
   return (
     <div>
-      <div className="hero">
+      <div className="hero" style={heroBg ? {
+        backgroundImage: `linear-gradient(rgba(26,26,46,0.75), rgba(26,26,46,0.75)), url(${heroBg})`,
+        backgroundSize: 'cover', backgroundPosition: 'center'
+      } : {}}>
         <div className="container">
           <h1>Find the Best Adverts on dFlex</h1>
           <p>Browse thousands of listings across all categories on dflex.com</p>
