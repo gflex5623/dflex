@@ -5,6 +5,58 @@ import api from '../api'
 
 const ADMIN_EMAIL = 'davidzarch0@gmail.com'
 const ADMIN_SECRET = 'dflex-admin-2024'
+const CLOUD_NAME = 'dneyg9kaw'
+const UPLOAD_PRESET = 'dflex_uploads'
+
+function BgImageUpload() {
+  const [uploading, setUploading] = useState(false)
+  const [preview, setPreview] = useState(localStorage.getItem('dflex_bg') || '')
+  const [msg, setMsg] = useState('')
+
+  const handleFile = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true); setMsg('')
+    const fd = new FormData()
+    fd.append('file', file)
+    fd.append('upload_preset', UPLOAD_PRESET)
+    try {
+      const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, { method: 'POST', body: fd })
+      const data = await res.json()
+      if (data.secure_url) {
+        setPreview(data.secure_url)
+        localStorage.setItem('dflex_bg', data.secure_url)
+        // Save to backend settings
+        await api.post('/admin/settings', { secret: ADMIN_SECRET, key: 'hero_bg', value: data.secure_url })
+        setMsg('✅ Background image updated! Refresh the homepage to see it.')
+      }
+    } catch { setMsg('Upload failed. Try again.') }
+    finally { setUploading(false) }
+  }
+
+  const remove = async () => {
+    setPreview('')
+    localStorage.removeItem('dflex_bg')
+    await api.post('/admin/settings', { secret: ADMIN_SECRET, key: 'hero_bg', value: '' })
+    setMsg('✅ Background image removed.')
+  }
+
+  return (
+    <div>
+      {preview && (
+        <div style={{ marginBottom: '1rem', position: 'relative' }}>
+          <img src={preview} alt="Background" style={{ width: '100%', height: 150, objectFit: 'cover', borderRadius: 8 }} />
+          <button onClick={remove} style={{ position: 'absolute', top: 8, right: 8, background: '#e53e3e', color: 'white', border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontSize: '0.8rem' }}>Remove</button>
+        </div>
+      )}
+      <label style={{ display: 'inline-block', background: '#e94560', color: 'white', padding: '0.6rem 1.2rem', borderRadius: 8, cursor: 'pointer', fontSize: '0.9rem' }}>
+        {uploading ? 'Uploading...' : '📷 Upload Background Image'}
+        <input type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} disabled={uploading} />
+      </label>
+      {msg && <p style={{ marginTop: '0.5rem', color: msg.startsWith('✅') ? '#38a169' : '#e53e3e', fontSize: '0.85rem' }}>{msg}</p>}
+    </div>
+  )
+}
 
 export default function AdminDashboard() {
   const { user } = useAuth()
@@ -161,6 +213,15 @@ export default function AdminDashboard() {
             </div>
 
             {/* App Management */}
+            {/* App Management */}
+            <div style={{ background: 'white', borderRadius: 10, padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', marginBottom: '1.5rem' }}>
+              <h3 style={{ marginBottom: '1rem' }}>🖼️ App Background Image</h3>
+              <p style={{ color: '#666', fontSize: '0.85rem', marginBottom: '1rem' }}>
+                Upload a background image for the homepage hero section. Use a high-quality image (1920×600px recommended).
+              </p>
+              <BgImageUpload />
+            </div>
+
             <div style={{ background: 'white', borderRadius: 10, padding: '1.5rem', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
               <h3 style={{ marginBottom: '1rem' }}>🔧 App Management</h3>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
