@@ -45,6 +45,19 @@ export default function Home() {
 
   return (
     <div>
+      {/* Chatbot Banner */}
+      <div style={{ background: '#1a1a2e', color: 'white', padding: '1rem 0', textAlign: 'center' }}>
+        <div className="container">
+          <p style={{ margin: 0, fontSize: '0.9rem' }}>
+            🤖 Need help? Chat with our AI assistant →{' '}
+            <a href="https://dflexchatbot.base44.app/" target="_blank" rel="noreferrer"
+              style={{ color: '#e94560', fontWeight: 700, textDecoration: 'none' }}>
+              dFlex Chatbot
+            </a>
+          </p>
+        </div>
+      </div>
+
       <div className="hero" style={heroBg ? {
         backgroundImage: `linear-gradient(rgba(26,26,46,0.75), rgba(26,26,46,0.75)), url(${heroBg})`,
         backgroundSize: 'cover', backgroundPosition: 'center'
@@ -108,6 +121,47 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <footer style={{ background: '#1a1a2e', color: 'white', padding: '2rem 0', marginTop: '3rem' }}>
+        <div className="container">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem', marginBottom: '1.5rem' }}>
+            <div>
+              <h3 style={{ color: '#e94560', marginBottom: '0.75rem' }}>dFlex</h3>
+              <p style={{ fontSize: '0.85rem', opacity: 0.7, lineHeight: 1.6 }}>Nigeria's growing free business advert platform. Post, browse, and connect.</p>
+            </div>
+            <div>
+              <h4 style={{ marginBottom: '0.75rem', opacity: 0.9 }}>Quick Links</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {[['Browse Adverts', '/'], ['Post Advert', '/post'], ['Pricing', '/pricing'], ['Register', '/register']].map(([label, href]) => (
+                  <a key={label} href={href} style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.85rem' }}>{label}</a>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 style={{ marginBottom: '0.75rem', opacity: 0.9 }}>Our Services</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <a href="https://dflexchatbot.base44.app/" target="_blank" rel="noreferrer" style={{ color: '#e94560', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>🤖 dFlex AI Chatbot</a>
+                <a href="/pricing" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.85rem' }}>💳 Subscription Plans</a>
+                <a href="/pricing" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.85rem' }}>✅ Verified Badge</a>
+                <a href="/pricing" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none', fontSize: '0.85rem' }}>📢 Banner Advertising</a>
+              </div>
+            </div>
+            <div>
+              <h4 style={{ marginBottom: '0.75rem', opacity: 0.9 }}>Contact Us</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.85rem' }}>
+                <a href="https://wa.me/2348109388210" target="_blank" rel="noreferrer" style={{ color: '#25D366', textDecoration: 'none' }}>💬 WhatsApp: +234 810 938 8210</a>
+                <a href="mailto:davidzarch0@gmail.com" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>📧 davidzarch0@gmail.com</a>
+                <a href="https://facebook.com/Dflex" target="_blank" rel="noreferrer" style={{ color: '#1877F2', textDecoration: 'none' }}>📘 Facebook: Dflex</a>
+                <a href="https://tiktok.com/@Dflex" target="_blank" rel="noreferrer" style={{ color: 'rgba(255,255,255,0.7)', textDecoration: 'none' }}>🎵 TikTok: @Dflex</a>
+              </div>
+            </div>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', textAlign: 'center', fontSize: '0.8rem', opacity: 0.6 }}>
+            © 2025 dFlex — Nigeria's Free Business Advert Platform | <a href="https://dflexchatbot.base44.app/" target="_blank" rel="noreferrer" style={{ color: '#e94560', textDecoration: 'none' }}>AI Chatbot</a>
+          </div>
+        </div>
+      </footer>
     </div>
   )
 }
