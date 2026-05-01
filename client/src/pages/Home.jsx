@@ -159,6 +159,8 @@ export default function Home() {
           </div>
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', textAlign: 'center', fontSize: '0.8rem', opacity: 0.6 }}>
             © 2025 dFlex — Nigeria's Free Business Advert Platform | <a href="https://dflexchatbot.base44.app/" target="_blank" rel="noreferrer" style={{ color: '#e94560', textDecoration: 'none' }}>AI Chatbot</a>
+            {' | '}
+            <a href="https://www.google.ng/search?q=dFlex+Nigeria+business+adverts" target="_blank" rel="noreferrer" style={{ color: '#4285F4', textDecoration: 'none' }}>🔍 Find us on Google</a>
           </div>
         </div>
       </footer>
