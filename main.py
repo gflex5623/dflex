@@ -437,6 +437,8 @@ async def sitemap():
   <url><loc>https://dflex-fdya.onrender.com/register</loc><priority>0.9</priority></url>
   <url><loc>https://dflex-fdya.onrender.com/login</loc><priority>0.8</priority></url>
   <url><loc>https://dflex-fdya.onrender.com/post</loc><priority>0.8</priority></url>
+  <url><loc>https://dflex-fdya.onrender.com/pricing</loc><priority>0.9</priority></url>
+  <url><loc>https://dflexchatbot.base44.app/</loc><priority>0.8</priority></url>
 </urlset>"""
     return Response(content=xml, media_type="application/xml")
 
